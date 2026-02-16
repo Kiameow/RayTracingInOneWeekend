@@ -21,7 +21,7 @@ color ray_color(const ray& r) {
     color endColor = color(0, 0, 1);
     // normalize
     vec3 unit_direction = unit_vector(r.direction());
-    auto t = 0.5 * unit_direction.y() + 1.0;
+    auto t = 0.5 * (unit_direction.y() + 1.0);
     return (1 - t) * startColor + t * endColor;
 }
 
