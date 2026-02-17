@@ -4,25 +4,35 @@
 
 #include <iostream>
 
-bool hit_sphere(const point3& center, double radius, const ray& r) {
+double hit_sphere(const point3& center, double radius, const ray& r) {
     // 我们需要列出一个包含t的参数方程，主要结构是判断射线上是否有点到球体中心距离为r
     vec3 oc = center - r.origin();
-    auto a = dot(r.direction(), r.direction());
-    auto b = -2.0 * dot(r.direction(), oc);
-    auto c = dot(oc, oc) - radius*radius;
-    auto discriminant = b*b - 4*a*c;
-    return (discriminant >= 0);
+    auto a = r.direction().length_squared();
+    auto h = dot(r.direction(), oc);
+    auto c = oc.length_squared() - radius*radius;
+    auto discriminant = h*h - a*c;
+
+    if (discriminant < 0) {
+        return -1;
+    } else {
+        return (h - std::sqrt(discriminant)) / a;
+    }
 }
 
 color ray_color(const ray& r) {
-    if (hit_sphere(point3(0, 0, 1), 0.5, r)) return color(1, 0, 0);
+    point3 sphere_center = point3(0, 0, -1);
+    auto t = hit_sphere(sphere_center, 0.5, r);
+    if (t > 0.0) {
+        vec3 N = unit_vector(r.at(t) - sphere_center);
+        return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+    }
 
     color startColor = color(1, 1, 1);
     color endColor = color(0, 0, 1);
     // normalize
     vec3 unit_direction = unit_vector(r.direction());
-    auto t = 0.5 * (unit_direction.y() + 1.0);
-    return (1 - t) * startColor + t * endColor;
+    auto b = 0.5 * (unit_direction.y() + 1.0);
+    return (1 - b) * startColor + b * endColor;
 }
 
 int main() {
