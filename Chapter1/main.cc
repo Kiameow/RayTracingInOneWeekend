@@ -1,8 +1,8 @@
-#include "vec3.h"
-#include "color.h"
-#include "ray.h"
+#include "rtweekend.h"
 
-#include <iostream>
+#include "hittable.h"
+#include "hitttable_list.h"
+#include "sphere.h"
 
 double hit_sphere(const point3& center, double radius, const ray& r) {
     // 我们需要列出一个包含t的参数方程，主要结构是判断射线上是否有点到球体中心距离为r
@@ -19,13 +19,19 @@ double hit_sphere(const point3& center, double radius, const ray& r) {
     }
 }
 
-color ray_color(const ray& r) {
-    point3 sphere_center = point3(0, 0, -1);
-    auto t = hit_sphere(sphere_center, 0.5, r);
-    if (t > 0.0) {
-        vec3 N = unit_vector(r.at(t) - sphere_center);
-        return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+// hittable_list别看名字是list，其实继承了hittable,这样不论传的是一个物体还是一堆物体都适用
+color ray_color(const ray& r, const hittable& world) {
+    hit_record rec;
+    if (world.hit(r, interval(0, infinity), rec)) {
+        return 0.5 * (rec.normal + color(1, 1, 1));
     }
+
+    // point3 sphere_center = point3(0, 0, -1);
+    // auto t = hit_sphere(sphere_center, 0.5, r);
+    // if (t > 0.0) {
+    //     vec3 N = unit_vector(r.at(t) - sphere_center);
+    //     return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+    // }
 
     color startColor = color(1, 1, 1);
     color endColor = color(0, 0, 1);
@@ -44,7 +50,11 @@ int main() {
     int image_height = int(image_width / aspect_ratio);
     image_height = (image_height < 1) ? 1 : image_height;
 
+    // World
     
+    hittable_list world;
+    world.add(make_shared<sphere>(point3(0, 0, -1), 0.5));
+    world.add(make_shared<sphere>(point3(0, -100.5, -1), 100));
 
     // Camera
     
@@ -78,7 +88,7 @@ int main() {
             auto ray_direction = pixel_center - camera_center;
             ray r(camera_center, ray_direction);
 
-            color pixel_color = ray_color(r);
+            color pixel_color = ray_color(r, world);
             write_color(std::cout, pixel_color);
         }
     }
