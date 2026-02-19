@@ -91,8 +91,15 @@ class camera {
             return color(0, 0, 0);
         hit_record rec;
 
+        // interval从0.001开始的原因：
+        // 当ray与物体表面相交时，可能会因为浮点数精度的原因造成得出的交点实际上在球体内部一点点，
+        // 导致再次发射ray时t在很小很小的时候直接就与球体再次相交了，然后这个发射就始终发生在球体内部表面
+        // 的一个非常小的空间里，最后超出depth限制后返回黑色，造成了之前的黑色斑点。
         if (world.hit(r, interval(0.001, infinity), rec)) {
-            vec3 direction = random_on_hemisphere(rec.normal);
+            vec3 direction;
+            while (direction.length_squared() == 0) {
+                direction = rec.normal + random_unit_vector();
+            }
             return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
         }
 
