@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include "hittable.h"
+#include "material.h"
 
 class camera {
   public:
@@ -96,11 +97,12 @@ class camera {
         // 导致再次发射ray时t在很小很小的时候直接就与球体再次相交了，然后这个发射就始终发生在球体内部表面
         // 的一个非常小的空间里，最后超出depth限制后返回黑色，造成了之前的黑色斑点。
         if (world.hit(r, interval(0.001, infinity), rec)) {
-            vec3 direction;
-            while (direction.length_squared() == 0) {
-                direction = rec.normal + random_unit_vector();
-            }
-            return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
+            ray scattered;
+            color attenuation;
+
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
+                return attenuation * ray_color(scattered, depth-1, world);
+            return color(0, 0, 0);
         }
 
         // background color (not hit anything)
