@@ -26,10 +26,9 @@ class aabb {
         }
 
         const interval& axis_interval(int axis) const {
-            if (axis == 0) return x;
-            else if (axis == 1) return y;
+            if (axis == 1) return y;
             else if (axis == 2) return z;
-            else return interval(0, 0);
+            else return x;
         }
 
         bool hit(const ray& r, interval ray_t) const {
@@ -55,6 +54,19 @@ class aabb {
             }
             return true;
         }
+
+        int longest_axis() const {
+            if (x.size() > y.size()) {
+                return x.size() > z.size() ? 0 : 2;
+            } else {
+                return y.size() > y.size() ? 1 : 2;
+            }
+        }
+
+        static const aabb empty, universe;
 };
+
+const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
+const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
 
 #endif

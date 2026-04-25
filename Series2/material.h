@@ -2,6 +2,7 @@
 #define MATERIAL_H
 
 #include "hittable.h"
+#include "texture.h"
 
 class material {
   public:
@@ -16,7 +17,8 @@ class material {
 
 class lambertian : public material {
   public:
-    lambertian(const color& albedo) : albedo(albedo) {}
+    lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
+    lambertian(const shared_ptr<texture> tex) : tex(tex) {}
 
     // attenuation虽然是衰减的中文意思，但是这里代表的是衰减后剩余的量，故和反射率/固有色是一个意思
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
@@ -27,12 +29,12 @@ class lambertian : public material {
             scatter_direction = rec.normal;
 
         scattered = ray(rec.p, scatter_direction, r_in.time());
-        attenuation = albedo;
+        attenuation = tex->value(rec.u, rec.v, rec.p);
         return true;
     }
 
   private:
-    color albedo;
+    shared_ptr<texture> tex;
 };
 
 class metal : public material {

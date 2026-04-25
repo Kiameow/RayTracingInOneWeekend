@@ -50,7 +50,7 @@ class sphere : public hittable {
             return true;
         }
 
-        aabb bounding_box() {
+        aabb bounding_box() const override {
             return bbox;
         }
 
