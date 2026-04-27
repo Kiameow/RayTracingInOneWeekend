@@ -2,6 +2,8 @@
 #define TEXTURE_H
 
 #include "color.h"
+#include "rtw_stb_image.h"
+#include "perlin.h"
 
 class texture {
     public:
@@ -21,6 +23,18 @@ class solid_color : public texture {
         }
     private:
         color albedo;
+};
+
+class noise_texture : public texture {
+    public:
+        noise_texture(double scale) : inv_scale(1.0 / scale) {}
+
+        color value(double u, double v, const point3& p) const override {
+            return noise.noise(p, inv_scale) * color(1, 1, 1);
+        }
+    private:
+        perlin noise;
+        double inv_scale;
 };
 
 class checker_texture : public texture {
@@ -43,6 +57,28 @@ class checker_texture : public texture {
         double inv_scale;
         shared_ptr<texture> even;
         shared_ptr<texture> odd;
+};
+
+class image_texture : public texture {
+    public:
+        image_texture(const char* filename) : image(filename) {}
+
+        color value(double u, double v, const point3& p) const override {
+            if (image.width() <= 0 || image.height() <=0 ) return color(0, 1, 1);
+
+            u = interval(0, 1).clamp(u);
+            v = 1.0 - interval(0, 1).clamp(v); // 翻转以适应图片坐标系
+
+            auto i = int(u * image.width());
+            auto j = int(v * image.height());
+            auto pixel = image.pixel_data(i, j);
+
+            auto color_scale = 1.0 / 255.0;
+            return color(color_scale * pixel[0], color_scale * pixel[1], color_scale * pixel[2]);
+        }
+
+    private:
+        rtw_image image;
 };
 
 #endif

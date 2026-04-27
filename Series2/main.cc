@@ -9,12 +9,12 @@
 #include "texture.h"
 // hittable_list别看名字是list，其实继承了hittable,这样不论传的是一个物体还是一堆物体都适用
 
-int main() {
+void bouncing_spheres() {
     // World
     hittable_list world;
 
-    auto checker = make_shared<checker_texture>(1.0, color(.2, .3, .1), color(.9, .9, .9));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
@@ -71,4 +71,88 @@ int main() {
     cam.defocus_angle = 0.6;
     cam.focus_dist    = 10.0;
     cam.render(world);
+}
+
+void checkered_spheres() {
+    hittable_list world;
+
+    auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
+
+    world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
+    world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
+
+    camera cam;
+
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.image_width       = 400;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 50;
+
+    cam.vfov     = 20;
+    cam.lookfrom = point3(13,2,3);
+    cam.lookat   = point3(0,0,0);
+    cam.vup      = vec3(0,1,0);
+
+    cam.defocus_angle = 0;
+
+    cam.render(world);
+}
+
+void earth() {
+    hittable_list world;
+
+    auto earth_texture  = make_shared<image_texture>("earthmap.jpg");
+    auto earth_material = make_shared<lambertian>(earth_texture);
+
+    world.add(make_shared<sphere>(point3(0, 0, 0), 2, earth_material));
+
+    camera cam;
+
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.image_width       = 400;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 50;
+
+    cam.vfov     = 20;
+    cam.lookfrom = point3(0,0,12);
+    cam.lookat   = point3(0,0,0);
+    cam.vup      = vec3(0,1,0);
+
+    cam.defocus_angle = 0;
+
+    cam.render(world);
+}
+
+void noise() {
+    hittable_list world;
+
+    auto noise_tex = make_shared<noise_texture>(0.33);
+
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(noise_tex)));
+    world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(noise_tex)));
+
+    camera cam;
+
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.image_width       = 400;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 50;
+
+    cam.vfov     = 20;
+    cam.lookfrom = point3(13,2,3);
+    cam.lookat   = point3(0,0,0);
+    cam.vup      = vec3(0,1,0);
+
+    cam.defocus_angle = 0;
+
+    cam.render(world);
+}
+
+int main() {
+    switch(4) {
+        case 1: bouncing_spheres(); break;
+        case 2: checkered_spheres(); break;
+        case 3: earth(); break;
+        case 4: noise(); break;
+    }
 }
