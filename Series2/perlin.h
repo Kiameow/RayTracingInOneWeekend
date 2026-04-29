@@ -7,7 +7,7 @@ class perlin {
     public:
         perlin() {
             for (int i = 0; i < point_count; i++) {
-                randfloat[i] = random_double();
+                randvec[i] = unit_vector(vec3::random(-1, 1));
             }
 
             perlin_generate_perm(perm_x);
@@ -15,25 +15,48 @@ class perlin {
             perlin_generate_perm(perm_z);
         }
 
-        double noise(const point3& p, double inv_scale) const {
-            auto i = int(inv_scale*p.x()) & 255;
-            auto j = int(inv_scale*p.y()) & 255;
-            auto k = int(inv_scale*p.z()) & 255;
+        double noise(const point3& p) const {
+            auto u = p.x() - std::floor(p.x());
+            auto v = p.y() - std::floor(p.y());
+            auto w = p.z() - std::floor(p.z());
 
-            return randfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
+            auto i = int(std::floor(p.x()));
+            auto j = int(std::floor(p.y()));
+            auto k = int(std::floor(p.z()));
+            vec3 c[2][2][2]; // c stands for a unit cube space
+            
+            for (int di = 0; di < 2; di++) {
+                for (int dj = 0; dj < 2; dj++) {
+                    for (int dk = 0; dk < 2; dk++) {
+                        c[di][dj][dk] = randvec[
+                            perm_x[(i + di) & 255] ^
+                            perm_y[(j + dj) & 255] ^
+                            perm_z[(k + dk) & 255]
+                        ];
+                    }
+                }
+            }
+
+            return perlin_interp(c, u, v, w);
         }
 
-        double simple_noise(const point3& p, double inv_scale) const {
-            auto i = int(inv_scale*p.x()) & 255;
-            auto j = int(inv_scale*p.y()) & 255;
-            auto k = int(inv_scale*p.z()) & 255;
+        double turb(const point3& p, int depth) const {
+            auto accum = 0.0;
+            auto temp_p = p;
+            auto weight = 1.0;
 
-            return randfloat[(i + j + k) % 256];
+            for (int i = 0; i < depth; i++) {
+                accum += noise(temp_p) * weight;
+                weight *= 0.5;
+                temp_p *= 2;
+            }
+
+            return std::fabs(accum);
         }
 
     private:
         static const int point_count = 256;
-        double randfloat[point_count];
+        vec3 randvec[point_count];
         int perm_x[point_count];
         int perm_y[point_count];
         int perm_z[point_count];
@@ -53,6 +76,48 @@ class perlin {
                 p[i] = target;
                 p[target] = tmp;
             }
+        }
+
+        static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+            auto accum = 0.0;
+
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    for (int k = 0; k < 2; k++) {
+                        accum += (i * u + (1-i) * (1-u))
+                               * (j * v + (1-j) * (1-v))
+                               * (k * w + (1-k) * (1-w))
+                               * c[i][j][k];
+                    }
+                }
+            }
+
+            return accum;
+        }
+
+        static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+            auto accum = 0.0;
+
+            auto uu = u * u * u * (u * (u * 6 - 15) + 10);
+            auto vv = v * v * v * (v * (v * 6 - 15) + 10);
+            auto ww = w * w * w * (w * (w * 6 - 15) + 10);
+            // auto uu = u*u*(3-2*u);
+            // auto vv = v*v*(3-2*v); 
+            // auto ww = w*w*(3-2*w); 
+
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    for (int k = 0; k < 2; k++) {
+                        auto weight_v = vec3(u - i, v - j, w - k);
+                        accum += (i * uu + (1-i) * (1-uu))
+                               * (j * vv + (1-j) * (1-vv))
+                               * (k * ww + (1-k) * (1-ww))
+                               * dot(weight_v, c[i][j][k]);
+                    }
+                }
+            }
+
+            return accum;
         }
 };
 

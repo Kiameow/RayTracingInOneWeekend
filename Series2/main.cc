@@ -126,7 +126,7 @@ void earth() {
 void noise() {
     hittable_list world;
 
-    auto noise_tex = make_shared<noise_texture>(0.33);
+    auto noise_tex = make_shared<noise_texture>(0.25);
 
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(noise_tex)));
     world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(noise_tex)));
